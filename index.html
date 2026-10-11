@@ -34,11 +34,14 @@
   header{margin-bottom:18px;}
   .eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--accent);margin-bottom:6px;}
   h1{font-family:'Shippori Mincho',serif;font-weight:700;font-size:clamp(23px,5.5vw,30px);line-height:1.3;margin:0 0 4px;}
-  .sub{color:var(--ink-soft);font-size:13px;margin:0;}
-  .sync{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-faint);margin-top:8px;}
+  .whobar{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:14px;}
+  .whobar .who{font-weight:700;}
+  .whobar .sync{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-faint);margin-left:auto;}
   .sync .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-faint);}
   .sync.live .dot{background:var(--accent);}
   .sync.live{color:var(--accent);}
+  .link-btn{background:none;border:none;font:inherit;font-size:12px;color:var(--ink-faint);cursor:pointer;padding:2px 4px;text-decoration:underline;}
+  .link-btn:hover{color:var(--warn);}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0;}
   .stat-tile{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius);padding:14px 16px;}
   .stat-tile .label{font-size:11px;color:var(--ink-soft);margin-bottom:6px;}
@@ -50,6 +53,7 @@
   .panel.active{display:block;}
   .card{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
   .card h2{font-family:'Shippori Mincho',serif;font-size:17px;font-weight:700;margin:0 0 16px;}
+  .card p{font-size:13px;color:var(--ink-soft);margin:0 0 14px;line-height:1.7;}
   form{display:flex;flex-direction:column;gap:14px;}
   .field{display:flex;flex-direction:column;gap:6px;min-width:0;}
   label{font-size:12px;font-weight:700;color:var(--ink-soft);}
@@ -70,26 +74,21 @@
   button.btn-ghost{flex:1;}
   .hint{font-size:12px;color:var(--warn-ink);background:var(--warn-soft);border-radius:8px;padding:8px 10px;display:none;}
   .hint.show{display:block;}
-  .filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
-  .filters select{flex:1 1 140px;}
+  .filters{display:flex;gap:10px;margin-bottom:14px;}
   .sum-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px;}
   .sum-row .nm{font-weight:700;}
   .sum-row .amts{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-align:right;}
   .sum-row .amts b{color:var(--ink);font-size:14px;}
-  .sum-row.total{border-bottom:none;border-top:2px solid var(--ink);margin-top:4px;}
   .sec-title{font-size:12px;font-weight:700;color:var(--ink-soft);margin:22px 0 10px;}
   .history-list{display:flex;flex-direction:column;gap:8px;}
   .history-item{background:var(--surface);border:1px solid var(--line-soft);border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;}
   .hi-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px;}
-  .hi-title{font-weight:700;font-size:14px;}
-  .hi-date{font-size:12px;color:var(--ink-faint);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+  .hi-date{font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;}
   .hi-amts{display:flex;gap:16px;font-size:13px;color:var(--ink-soft);flex-wrap:wrap;}
   .hi-amts b{font-family:'JetBrains Mono',monospace;color:var(--ink);}
   .hi-amts .g{color:var(--gas);font-weight:700;}
   .hi-amts .t{color:var(--toll);font-weight:700;}
   .hi-foot{display:flex;justify-content:flex-end;margin-top:6px;}
-  .link-btn{background:none;border:none;font:inherit;font-size:12px;color:var(--ink-faint);cursor:pointer;padding:2px 4px;}
-  .link-btn:hover{color:var(--warn);}
   .confirm-row{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--warn-ink);}
   .confirm-row button{font:inherit;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;padding:2px 6px;}
   .confirm-row .yes{color:var(--warn);}
@@ -100,6 +99,7 @@
   .toast.err{background:var(--warn);color:#fff;}
   .offline-banner{background:var(--warn-soft);color:var(--warn-ink);border-radius:var(--radius);padding:12px 16px;font-size:13px;margin-bottom:16px;display:none;}
   .offline-banner.show{display:block;}
+  [hidden]{display:none !important;}
 </style>
 </head>
 <body>
@@ -107,63 +107,75 @@
   <header>
     <div class="eyebrow">キャッスルハウス</div>
     <h1>ガソリン・高速代台帳</h1>
-    <p class="sub">日付・名前・ガソリン代・高速代を入力するとスプレッドシートに反映されます</p>
-    <div class="sync" id="syncIndicator"><span class="dot"></span><span id="syncLabel">接続中…</span></div>
+    <div class="whobar" id="whoBar" hidden>
+      <span class="who" id="whoName"></span><span>さんの記録</span>
+      <button type="button" class="link-btn" id="changeNameBtn">名前を変更</button>
+      <span class="sync" id="syncIndicator"><span class="dot"></span><span id="syncLabel">接続中…</span></span>
+    </div>
   </header>
 
-  <div class="offline-banner" id="offlineBanner">共有シートに接続できませんでした。しばらくしてから再読み込みしてください。</div>
-
-  <div class="stats">
-    <div class="stat-tile"><div class="label">今月の合計</div><div class="value" id="statTotal">–</div></div>
-    <div class="stat-tile"><div class="label">今月のガソリン代</div><div class="value" id="statGas" style="color:var(--gas)">–</div></div>
-    <div class="stat-tile"><div class="label">今月の高速代</div><div class="value" id="statToll" style="color:var(--toll)">–</div></div>
-  </div>
-
-  <div class="seg">
-    <button type="button" id="tabBtnNew" class="active">入力する</button>
-    <button type="button" id="tabBtnHistory">履歴・集計</button>
-  </div>
-
-  <div class="panel active" id="panelNew">
+  <div class="panel" id="panelSetup">
     <div class="card">
-      <h2>今日の分を入力</h2>
-      <form id="recordForm" novalidate>
+      <h2>はじめにお名前を入力</h2>
+      <p>入力した名前の分だけが表示されます。この端末に記憶されるので、次回からは入力不要です。毎回同じ表記(例：藤岡)で入力してください。</p>
+      <form id="setupForm" novalidate>
         <div class="field">
-          <label for="fDate">日付<span class="req">*必須</span></label>
-          <input type="date" id="fDate">
+          <label for="fSetupName">お名前<span class="req">*必須</span></label>
+          <input type="text" id="fSetupName" placeholder="例：藤岡" autocomplete="off">
         </div>
-        <div class="field">
-          <label for="fStaff">名前<span class="req">*必須</span></label>
-          <input type="text" id="fStaff" placeholder="例：佐藤" list="staffList" autocomplete="off">
-          <datalist id="staffList"></datalist>
-        </div>
-        <div class="field gas">
-          <label for="fGas">ガソリン代</label>
-          <div class="yen"><input type="number" id="fGas" inputmode="numeric" placeholder="0" min="0"></div>
-        </div>
-        <div class="field toll">
-          <label for="fToll">高速代</label>
-          <div class="yen"><input type="number" id="fToll" inputmode="numeric" placeholder="0" min="0"></div>
-        </div>
-        <div class="hint" id="formHint">日付・名前と、ガソリン代か高速代のどちらか(または両方)を入力してください。</div>
-        <div class="btn-row">
-          <button type="button" class="btn btn-ghost" id="resetBtn">リセット</button>
-          <button type="submit" class="btn btn-primary" id="saveBtn">保存する</button>
-        </div>
+        <div class="hint" id="setupHint">お名前を入力してください。</div>
+        <div class="btn-row"><button type="submit" class="btn btn-primary">はじめる</button></div>
       </form>
     </div>
   </div>
 
-  <div class="panel" id="panelHistory">
-    <div class="card">
-      <h2>集計と履歴</h2>
-      <div class="filters">
-        <select id="filterMonth" aria-label="対象月"></select>
-        <select id="filterStaff" aria-label="名前"><option value="__all__">全員</option></select>
+  <div id="mainArea" hidden>
+    <div class="offline-banner" id="offlineBanner">共有シートに接続できませんでした。しばらくしてから再読み込みしてください。</div>
+
+    <div class="stats">
+      <div class="stat-tile"><div class="label">今月の合計</div><div class="value" id="statTotal">–</div></div>
+      <div class="stat-tile"><div class="label">今月のガソリン代</div><div class="value" id="statGas" style="color:var(--gas)">–</div></div>
+      <div class="stat-tile"><div class="label">今月の高速代</div><div class="value" id="statToll" style="color:var(--toll)">–</div></div>
+    </div>
+
+    <div class="seg">
+      <button type="button" id="tabBtnNew" class="active">入力する</button>
+      <button type="button" id="tabBtnHistory">履歴・集計</button>
+    </div>
+
+    <div class="panel active" id="panelNew">
+      <div class="card">
+        <h2>今日の分を入力</h2>
+        <form id="recordForm" novalidate>
+          <div class="field">
+            <label for="fDate">日付<span class="req">*必須</span></label>
+            <input type="date" id="fDate">
+          </div>
+          <div class="field gas">
+            <label for="fGas">ガソリン代</label>
+            <div class="yen"><input type="number" id="fGas" inputmode="numeric" placeholder="0" min="0"></div>
+          </div>
+          <div class="field toll">
+            <label for="fToll">高速代</label>
+            <div class="yen"><input type="number" id="fToll" inputmode="numeric" placeholder="0" min="0"></div>
+          </div>
+          <div class="hint" id="formHint">日付と、ガソリン代か高速代のどちらか(または両方)を入力してください。</div>
+          <div class="btn-row">
+            <button type="button" class="btn btn-ghost" id="resetBtn">リセット</button>
+            <button type="submit" class="btn btn-primary" id="saveBtn">保存する</button>
+          </div>
+        </form>
       </div>
-      <div id="summary"></div>
-      <div class="sec-title">履歴</div>
-      <div class="history-list" id="historyList"><div class="empty">読み込み中…</div></div>
+    </div>
+
+    <div class="panel" id="panelHistory">
+      <div class="card">
+        <h2>集計と履歴</h2>
+        <div class="filters"><select id="filterMonth" aria-label="対象月"></select></div>
+        <div id="summary"></div>
+        <div class="sec-title">履歴</div>
+        <div class="history-list" id="historyList"><div class="empty">読み込み中…</div></div>
+      </div>
     </div>
   </div>
 
@@ -173,15 +185,18 @@
 <script>
 (function(){
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwoR6mqGtu6EynKwrH9gJhVFQiMYsA3_DIZhAYgHsJpKG-Gnhn8DtfxdaMFfvbIPubFhg/exec';
+  const NAME_KEY = 'gtl_my_name';
 
+  let myName = '';
   let records = [];
   let loaded = false;
   let filterMonth = null;
-  let filterStaff = '__all__';
   let pendingDelete = null;
+  let timer = null;
 
   const $ = id => document.getElementById(id);
 
+  function normName(s){ return String(s || '').replace(/\s+/g, ''); }
   function todayStr(){
     const d = new Date();
     const pad = n => String(n).padStart(2,'0');
@@ -191,13 +206,12 @@
   filterMonth = CUR_YM;
 
   function yen(n){ return '¥' + Math.round(Number(n)||0).toLocaleString('ja-JP'); }
+  function ymLabel(ym){ return ym.slice(0,4) + '年' + Number(ym.slice(5,7)) + '月'; }
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
     });
   }
-  function ymLabel(ym){ return ym.slice(0,4) + '年' + Number(ym.slice(5,7)) + '月'; }
-
   function toast(msg, isErr){
     const t = $('toast');
     t.textContent = msg;
@@ -205,6 +219,56 @@
     clearTimeout(toast._h);
     toast._h = setTimeout(function(){ t.className = 'toast'; }, 2600);
   }
+
+  function getSavedName(){
+    try { return localStorage.getItem(NAME_KEY) || ''; } catch(e){ return ''; }
+  }
+  function saveName(n){
+    try { localStorage.setItem(NAME_KEY, n); } catch(e){}
+  }
+  function clearName(){
+    try { localStorage.removeItem(NAME_KEY); } catch(e){}
+  }
+
+  function showSetup(){
+    clearInterval(timer);
+    myName = '';
+    records = [];
+    loaded = false;
+    $('whoBar').hidden = true;
+    $('mainArea').hidden = true;
+    $('panelSetup').classList.add('active');
+    $('fSetupName').value = '';
+    $('setupHint').classList.remove('show');
+  }
+
+  function showMain(){
+    $('panelSetup').classList.remove('active');
+    $('mainArea').hidden = false;
+    $('whoBar').hidden = false;
+    $('whoName').textContent = myName;
+    $('fDate').value = todayStr();
+    loaded = false;
+    renderStats();
+    renderHistory();
+    loadRecords();
+    clearInterval(timer);
+    timer = setInterval(loadRecords, 15000);
+  }
+
+  $('setupForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const n = $('fSetupName').value.trim();
+    if(!n){ $('setupHint').classList.add('show'); return; }
+    myName = n;
+    saveName(n);
+    showMain();
+  });
+
+  $('changeNameBtn').addEventListener('click', function(){
+    clearName();
+    showSetup();
+  });
 
   function switchTab(tab){
     $('tabBtnNew').classList.toggle('active', tab==='new');
@@ -215,8 +279,6 @@
   $('tabBtnNew').addEventListener('click', function(){ switchTab('new'); });
   $('tabBtnHistory').addEventListener('click', function(){ switchTab('history'); });
 
-  $('fDate').value = todayStr();
-
   $('resetBtn').addEventListener('click', function(){
     $('recordForm').reset();
     $('fDate').value = todayStr();
@@ -226,26 +288,23 @@
   $('recordForm').addEventListener('submit', function(e){
     e.preventDefault();
     const date = $('fDate').value;
-    const staff = $('fStaff').value.trim();
     const gas = Number($('fGas').value) || 0;
     const toll = Number($('fToll').value) || 0;
 
-    if(!date || !staff || (gas <= 0 && toll <= 0)){
+    if(!date || (gas <= 0 && toll <= 0)){
       $('formHint').classList.add('show');
       return;
     }
     $('formHint').classList.remove('show');
 
-    const data = { date: date, staff: staff, gas: gas, toll: toll, createdAt: new Date().toISOString() };
+    const data = { date: date, staff: myName, gas: gas, toll: toll };
 
     $('saveBtn').disabled = true;
     $('saveBtn').textContent = '保存中…';
     apiPost(data).then(function(res){
       if(res && res.ok){
-        const keepStaff = staff;
         $('recordForm').reset();
         $('fDate').value = todayStr();
-        $('fStaff').value = keepStaff;
         toast('保存しました');
         loadRecords();
       }else{
@@ -260,7 +319,6 @@
   });
 
   $('filterMonth').addEventListener('change', function(e){ filterMonth = e.target.value; renderHistory(); });
-  $('filterStaff').addEventListener('change', function(e){ filterStaff = e.target.value; renderHistory(); });
 
   function apiGet(){
     return fetch(SCRIPT_URL + '?_=' + Date.now(), { method:'GET' }).then(function(r){ return r.json(); });
@@ -283,30 +341,18 @@
     });
   }
 
-  function uniqueSorted(arr){
-    const seen = {}; const out = [];
-    arr.forEach(function(v){ if(v && !seen[v]){ seen[v] = true; out.push(v); } });
-    return out.sort();
-  }
-
   function renderStats(){
     let g = 0, t = 0;
     records.forEach(function(r){
       if(r.date && r.date.slice(0,7) === CUR_YM){ g += Number(r.gas)||0; t += Number(r.toll)||0; }
     });
-    $('statTotal').textContent = yen(g + t);
-    $('statGas').textContent = yen(g);
-    $('statToll').textContent = yen(t);
+    $('statTotal').textContent = loaded ? yen(g + t) : '–';
+    $('statGas').textContent = loaded ? yen(g) : '–';
+    $('statToll').textContent = loaded ? yen(t) : '–';
 
-    const names = uniqueSorted(records.map(function(r){ return r.staff; }));
-    $('staffList').innerHTML = names.map(function(n){ return '<option value="' + escapeHtml(n) + '">'; }).join('');
-
-    const curStaff = $('filterStaff').value;
-    $('filterStaff').innerHTML = '<option value="__all__">全員</option>' +
-      names.map(function(n){ return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
-    if(names.indexOf(curStaff) !== -1) $('filterStaff').value = curStaff;
-
-    const months = uniqueSorted(records.map(function(r){ return (r.date||'').slice(0,7); }).concat([CUR_YM])).reverse();
+    const set = {}; set[CUR_YM] = true;
+    records.forEach(function(r){ if(r.date) set[r.date.slice(0,7)] = true; });
+    const months = Object.keys(set).sort().reverse();
     $('filterMonth').innerHTML = months.map(function(m){
       return '<option value="' + m + '">' + ymLabel(m) + '</option>';
     }).join('');
@@ -315,37 +361,23 @@
 
   function renderHistory(){
     if(!loaded){
+      $('summary').innerHTML = '';
       $('historyList').innerHTML = '<div class="empty">読み込み中…</div>';
       return;
     }
-    const inMonth = records.filter(function(r){ return (r.date||'').slice(0,7) === filterMonth; });
-    const list = inMonth.filter(function(r){ return filterStaff === '__all__' || r.staff === filterStaff; });
+    const list = records.filter(function(r){ return (r.date||'').slice(0,7) === filterMonth; });
+    let tg = 0, tt = 0;
+    list.forEach(function(r){ tg += Number(r.gas)||0; tt += Number(r.toll)||0; });
 
-    const by = {}; let tg = 0, tt = 0;
-    inMonth.forEach(function(r){
-      const g = Number(r.gas)||0, t = Number(r.toll)||0;
-      if(!by[r.staff]) by[r.staff] = {g:0,t:0};
-      by[r.staff].g += g; by[r.staff].t += t;
-    });
-    const rows = Object.keys(by).sort().filter(function(n){ return filterStaff === '__all__' || n === filterStaff; });
-    rows.forEach(function(n){ tg += by[n].g; tt += by[n].t; });
-
-    if(rows.length === 0){
-      $('summary').innerHTML = '<div class="empty">この月の記録はまだありません</div>';
-    }else{
-      $('summary').innerHTML = rows.map(function(n){
-        return '<div class="sum-row"><span class="nm">' + escapeHtml(n) + '</span><span class="amts">ガソリン ' + yen(by[n].g) + ' ／ 高速 ' + yen(by[n].t) + '　<b>' + yen(by[n].g + by[n].t) + '</b></span></div>';
-      }).join('') +
-      '<div class="sum-row total"><span class="nm">合計</span><span class="amts">ガソリン ' + yen(tg) + ' ／ 高速 ' + yen(tt) + '　<b>' + yen(tg + tt) + '</b></span></div>';
-    }
+    $('summary').innerHTML = '<div class="sum-row"><span class="nm">' + ymLabel(filterMonth) + 'の合計</span><span class="amts">ガソリン ' + yen(tg) + ' ／ 高速 ' + yen(tt) + '　<b>' + yen(tg + tt) + '</b></span></div>';
 
     if(list.length === 0){
-      $('historyList').innerHTML = '<div class="empty">この条件の記録はありません</div>';
+      $('historyList').innerHTML = '<div class="empty">この月の記録はまだありません</div>';
       return;
     }
     $('historyList').innerHTML = list.map(function(r){
       const isPending = pendingDelete === r.id;
-      let h = '<div class="history-item"><div class="hi-top"><div class="hi-title">' + escapeHtml(r.staff || '') + '</div><div class="hi-date">' + (r.date || '') + '</div></div>';
+      let h = '<div class="history-item"><div class="hi-top"><div class="hi-date">' + (r.date || '') + '</div></div>';
       h += '<div class="hi-amts"><span><span class="g">ガソリン</span> <b>' + yen(r.gas) + '</b></span><span><span class="t">高速</span> <b>' + yen(r.toll) + '</b></span></div>';
       h += '<div class="hi-foot">';
       if(isPending){
@@ -368,13 +400,16 @@
   }
 
   function loadRecords(){
+    const who = myName;
     apiGet().then(function(data){
+      if(who !== myName) return;
       if(!Array.isArray(data)) throw new Error('bad response');
-      records = data.slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||''); });
+      records = data.filter(function(r){ return normName(r.staff) === normName(who); })
+        .sort(function(a,b){ return (b.date||'').localeCompare(a.date||'') || String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
       loaded = true;
       $('offlineBanner').classList.remove('show');
       $('syncIndicator').classList.add('live');
-      $('syncLabel').textContent = '全員のデータと同期済み';
+      $('syncLabel').textContent = '同期済み';
       renderStats();
       renderHistory();
     }).catch(function(){
@@ -384,8 +419,8 @@
     });
   }
 
-  loadRecords();
-  setInterval(loadRecords, 15000);
+  const saved = getSavedName();
+  if(saved){ myName = saved; showMain(); } else { showSetup(); }
 })();
 </script>
 </body>
